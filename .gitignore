@@ -1,0 +1,5 @@
+.idea
+node_modules
+yarn.lock
+afj-demo-project.iml
+package-lock.json
