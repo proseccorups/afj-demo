@@ -8,15 +8,23 @@ import {
     HttpOutboundTransport,
     DidExchangeState,
     OutOfBandRecord,
-    ConnectionsModule,
+    ConnectionsModule, KeyType, DidDocument,
 } from '@aries-framework/core'
 import { agentDependencies, HttpInboundTransport } from '@aries-framework/node'
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
+
+interface CheqdDidCreateOptions {
+    method?: string;
+    secret?: any;
+    options?: any;
+    didDocument?: any;
+}
 
 const initializeBobAgent = async () => {
     // Simple agent configuration. This sets some basic fields like the wallet
     // configuration and the label. It also sets the mediator invitation url,
     // because this is most likely required in a mobile environment.
+
     const config: InitConfig = {
         label: 'demo-agent-bob',
         walletConfig: {
@@ -44,6 +52,36 @@ const initializeBobAgent = async () => {
 
     // Initialize the agent
     await agent.initialize()
+
+    // Create a key pair
+    const key = await agent.wallet.createKey({
+        keyType: KeyType.Ed25519,
+    })
+
+    // Encode public key according to the verification method
+    const ed25519PublicKeyBase58 = key.publicKeyBase58
+
+    // Create a DID
+    await agent.dids.create<CheqdDidCreateOptions>({
+        method: 'cheqd',
+        secret: {},
+        options: {
+            network: 'testnet',
+        },
+        didDocument: new DidDocument({
+            id: 'did:cheqd:testnet:92874297-d824-40ea-8ae5-364a1ec9237d',
+            controller: ['did:cheqd:testnet:92874297-d824-40ea-8ae5-364a1ec9237d'],
+            verificationMethod: [
+                {
+                    id: 'did:cheqd:testnet:92874297-d824-40ea-8ae5-364a1ec9237d#key-1',
+                    type: 'Ed25519VerificationKey2018',
+                    controller: 'did:cheqd:testnet:92874297-d824-40ea-8ae5-364a1ec9237d',
+                    publicKeyBase58: ed25519PublicKeyBase58,
+                },
+            ],
+            authentication: ['did:cheqd:testnet:92874297-d824-40ea-8ae5-364a1ec9237d#key-1'],
+        }),
+    })
 
     return agent
 }
@@ -80,8 +118,38 @@ const initializeAcmeAgent = async () => {
     // Register a simple `Http` inbound transport
     agent.registerInboundTransport(new HttpInboundTransport({ port: 3001 }))
 
-    // Initialize the agent
+// Initialize the agent
     await agent.initialize()
+
+    // Create a key pair
+    const key = await agent.wallet.createKey({
+        keyType: KeyType.Ed25519,
+    })
+
+    // encode public key according to the verification method
+    const ed25519PublicKeyBase58 = key.publicKeyBase58
+
+    // Create a DID
+    await agent.dids.create<CheqdDidCreateOptions>({
+        method: 'cheqd',
+        secret: {},
+        options: {
+            network: 'testnet',
+        },
+        didDocument: new DidDocument({
+            id: 'did:cheqd:testnet:RANDOM_UUID',  // Use an appropriate method to generate a UUID here
+            controller: ['did:cheqd:testnet:RANDOM_UUID'],
+            verificationMethod: [
+                {
+                    id: 'did:cheqd:testnet:RANDOM_UUID#key-1',
+                    type: 'Ed25519VerificationKey2018',
+                    controller: 'did:cheqd:testnet:RANDOM_UUID',
+                    publicKeyBase58: ed25519PublicKeyBase58,
+                },
+            ],
+            authentication: ['did:cheqd:testnet:RANDOM_UUID#key-1'],
+        }),
+    })
 
     return agent
 }
